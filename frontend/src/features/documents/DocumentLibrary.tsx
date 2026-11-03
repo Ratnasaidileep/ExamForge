@@ -28,6 +28,7 @@ export const DocumentLibrary: React.FC = () => {
   const [unitNumber, setUnitNumber] = useState(1);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [loadingSample, setLoadingSample] = useState(false);
 
   // Preview modal state
   const [previewDoc, setPreviewDoc] = useState<any | null>(null);
@@ -44,6 +45,19 @@ export const DocumentLibrary: React.FC = () => {
       .then(setDocuments)
       .catch(console.error)
       .finally(() => setLoading(false));
+  };
+
+  const handleLoadSample = async () => {
+    setLoadingSample(true);
+    try {
+      await apiFetch('/documents/sample', { method: 'POST' });
+      setUploadModalOpen(false);
+      loadDocuments();
+    } catch (e: any) {
+      alert(`Failed to load sample notes: ${e.message}`);
+    } finally {
+      setLoadingSample(false);
+    }
   };
 
   useEffect(() => {
@@ -130,16 +144,26 @@ export const DocumentLibrary: React.FC = () => {
           </p>
         </div>
 
-        <Button
-          variant="primary"
-          leftIcon={<Upload className="w-4 h-4" />}
-          onClick={() => {
-            setUploadError(null);
-            setUploadModalOpen(true);
-          }}
-        >
-          Upload Course Notes
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="secondary"
+            leftIcon={<BookOpen className="w-4 h-4 text-teal-600" />}
+            onClick={handleLoadSample}
+            isLoading={loadingSample}
+          >
+            Load Sample Notes
+          </Button>
+          <Button
+            variant="primary"
+            leftIcon={<Upload className="w-4 h-4" />}
+            onClick={() => {
+              setUploadError(null);
+              setUploadModalOpen(true);
+            }}
+          >
+            Upload Course Notes
+          </Button>
+        </div>
       </div>
 
       {/* Search and Filters Bar */}
@@ -275,10 +299,28 @@ export const DocumentLibrary: React.FC = () => {
             </Alert>
           )}
 
+          {/* Quick Sample Option */}
+          <div className="p-3 bg-indigo-50/70 border border-indigo-200/80 rounded-xl space-y-1.5 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="font-semibold text-[#1E293B]">Need sample curriculum files to test?</span>
+              <button
+                type="button"
+                onClick={handleLoadSample}
+                disabled={loadingSample}
+                className="text-[#3730A3] font-bold hover:underline"
+              >
+                {loadingSample ? 'Loading...' : '⚡ Quick Load Sample Notes'}
+              </button>
+            </div>
+            <p className="text-[11px] text-slate-500">
+              Or <a href="/sample_its_notes.pdf" download="sample_its_notes.pdf" className="text-teal-700 font-semibold underline">download this pre-formatted sample PDF</a> and drop it below to test real file parsing.
+            </p>
+          </div>
+
           <div className="border-2 border-dashed border-[#CBD5E1] rounded-xl p-6 text-center hover:bg-slate-50 transition-colors">
             <input
               type="file"
-              accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
               id="file-upload"
               className="hidden"
               onChange={handleFileChange}
@@ -286,10 +328,10 @@ export const DocumentLibrary: React.FC = () => {
             <label htmlFor="file-upload" className="cursor-pointer block">
               <Upload className="w-8 h-8 text-[#3730A3] mx-auto mb-2" />
               <span className="text-xs font-semibold text-[#0F172A] block">
-                {selectedFile ? selectedFile.name : 'Click to select PDF or DOCX file'}
+                {selectedFile ? selectedFile.name : 'Click to select PDF, DOCX, or TXT file'}
               </span>
               <span className="text-[11px] text-slate-500 block mt-1">
-                Text-based files only. Max size 15 MB.
+                Text-based notes (PDF, DOCX, TXT). Max size 15 MB.
               </span>
             </label>
           </div>

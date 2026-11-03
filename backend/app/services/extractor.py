@@ -35,12 +35,12 @@ def validate_uploaded_file(file: UploadFile, content: bytes) -> str:
     
     # 3. Magic bytes / header validation
     if ext == ".pdf":
-        if not content.startswith(b"%PDF-"):
+        if b"%PDF-" not in content[:1024]:
             raise HTTPException(status_code=400, detail="Invalid PDF file: Missing %PDF header.")
         return "pdf"
     elif ext == ".docx":
-        # DOCX is a zip file starting with PK\x03\x04
-        if not content.startswith(b"PK\x03\x04"):
+        # DOCX is a zip file starting with PK
+        if not content.startswith(b"PK"):
             raise HTTPException(status_code=400, detail="Invalid DOCX file: Corrupted or invalid archive.")
         return "docx"
     
@@ -159,6 +159,53 @@ def extract_from_docx(file_path: Path) -> Dict[str, Any]:
         return {
             "status": "failed",
             "error_message": f"DOCX extraction failed: {str(e)}",
+            "full_text": "",
+            "page_count": 0,
+            "headings": [],
+            "topics": []
+        }
+
+def extract_from_txt(file_path: Path) -> Dict[str, Any]:
+    try:
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                full_text = f.read()
+        except UnicodeDecodeError:
+            with open(file_path, "r", encoding="latin-1", errors="replace") as f:
+                full_text = f.read()
+                
+        lines = [line.strip() for line in full_text.splitlines() if line.strip()]
+        if not lines:
+            return {
+                "status": "failed",
+                "error_message": "Text file contains no readable content.",
+                "full_text": "",
+                "page_count": 1,
+                "headings": [],
+                "topics": []
+            }
+            
+        headings = []
+        for line in lines:
+            if len(line) < 80 and (re.match(r'^(Unit|Chapter|Section|\d+\.|\b[A-Z0-9\s]{4,}\b)', line) or line.isupper()):
+                headings.append(line)
+                
+        words = re.findall(r'\b[A-Z][a-z]{3,}\b', full_text)
+        from collections import Counter
+        top_words = [w for w, _ in Counter(words).most_common(12) if len(w) > 3]
+        
+        return {
+            "status": "completed",
+            "error_message": None,
+            "full_text": full_text,
+            "page_count": max(1, len(lines) // 25),
+            "headings": list(dict.fromkeys(headings))[:20],
+            "topics": top_words
+        }
+    except Exception as e:
+        return {
+            "status": "failed",
+            "error_message": f"Text file reading failed: {str(e)}",
             "full_text": "",
             "page_count": 0,
             "headings": [],

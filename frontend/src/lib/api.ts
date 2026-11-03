@@ -58,7 +58,17 @@ export async function apiFetch<T = any>(
     let errorMsg = `Request failed (${res.status})`;
     try {
       const errJson = await res.json();
-      errorMsg = errJson.detail || errJson.error || errorMsg;
+      if (typeof errJson.detail === 'string') {
+        errorMsg = errJson.detail;
+      } else if (Array.isArray(errJson.detail)) {
+        errorMsg = errJson.detail.map((e: any) => e.msg || e.message || JSON.stringify(e)).join(', ');
+      } else if (typeof errJson.error === 'string') {
+        errorMsg = errJson.error;
+      } else if (typeof errJson.message === 'string') {
+        errorMsg = errJson.message;
+      } else if (errJson.detail) {
+        errorMsg = JSON.stringify(errJson.detail);
+      }
     } catch {
       // not json
     }
