@@ -152,6 +152,7 @@ export const AppLayout: React.FC = () => {
           </div>
           {navItems.map((item) => {
             const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
+            const activeBg = currentUser.role === 'faculty' ? 'bg-[#3730A3]' : 'bg-[#0F766E]';
             return (
               <Link
                 key={item.path}
@@ -159,7 +160,7 @@ export const AppLayout: React.FC = () => {
                 onClick={() => setSidebarOpen(false)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-all ${
                   isActive
-                    ? 'bg-[#3730A3] text-white shadow-sm font-semibold'
+                    ? `${activeBg} text-white shadow-sm font-semibold`
                     : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                 }`}
               >
