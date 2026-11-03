@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Body
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any
 from app.db.session import get_db
-from app.db.models import DemoUser, Document, Question, Paper, Attempt, Response, AuditEvent, Notification
+from app.db.models import DemoUser, Document, Question, Paper, Attempt, AttemptItem, Response, AuditEvent, Notification
 from app.schemas.user import DemoUserResponse, DemoSwitchRequest
 from app.services.seed_service import reset_demo_workspace
 from app.api.deps import get_current_user_and_role, require_faculty

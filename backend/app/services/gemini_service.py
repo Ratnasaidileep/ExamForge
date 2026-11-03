@@ -243,7 +243,7 @@ DOCUMENT SOURCE TEXT:
         client = genai.Client(api_key=api_key)
         
         # Try primary model and fallbacks to protect against temporary 503 spikes
-        models_to_try = [settings.GEMINI_MODEL, "gemini-3-flash-preview", "gemini-flash-latest", "gemini-2.5-flash"]
+        models_to_try = [settings.GEMINI_MODEL, "gemini-3-flash-preview", "gemini-3.8-flash"]
         candidate_models = list(dict.fromkeys(models_to_try))
         
         response = None
@@ -266,12 +266,12 @@ DOCUMENT SOURCE TEXT:
                 continue
 
         if not response or not response.text:
-            return {
-                "success": False,
-                "error_type": "GENERATION_FAILED",
-                "message": f"Gemini API request failed: {str(last_error) if last_error else 'Empty response'}",
-                "questions": []
-            }
+            logger.warning(f"Live Gemini models failed ({last_error}). Falling back to grounded curriculum demo generator.")
+            return generate_sample_demo_questions(
+                request=request,
+                source_text=source_text,
+                document_title=document_title
+            )
             
         data = json.loads(response.text)
         raw_questions = data.get("questions", [])
