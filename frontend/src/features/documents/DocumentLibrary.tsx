@@ -29,6 +29,7 @@ export const DocumentLibrary: React.FC = () => {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [loadingSample, setLoadingSample] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   // Preview modal state
   const [previewDoc, setPreviewDoc] = useState<any | null>(null);
@@ -52,6 +53,9 @@ export const DocumentLibrary: React.FC = () => {
     try {
       await apiFetch('/documents/sample', { method: 'POST' });
       setUploadModalOpen(false);
+      setSelectedFile(null);
+      setDocTitle('');
+      setUploadError(null);
       loadDocuments();
     } catch (e: any) {
       alert(`Failed to load sample notes: ${e.message}`);
@@ -68,10 +72,34 @@ export const DocumentLibrary: React.FC = () => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setSelectedFile(file);
+      setUploadError(null);
       if (!docTitle) {
         setDocTitle(file.name.replace(/\.[^/.]+$/, '').replace(/_/g, ' '));
       }
     }
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const file = e.dataTransfer.files[0];
+      setSelectedFile(file);
+      setUploadError(null);
+      if (!docTitle) {
+        setDocTitle(file.name.replace(/\.[^/.]+$/, '').replace(/_/g, ' '));
+      }
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
   };
 
   const handleUpload = async (e: React.FormEvent) => {
@@ -86,7 +114,7 @@ export const DocumentLibrary: React.FC = () => {
     
     const formData = new FormData();
     formData.append('file', selectedFile);
-    formData.append('title', docTitle);
+    formData.append('title', docTitle.trim() || selectedFile.name);
     formData.append('subject_id', 'ITS-401');
     formData.append('unit_number', String(unitNumber));
     
@@ -98,6 +126,7 @@ export const DocumentLibrary: React.FC = () => {
       setUploadModalOpen(false);
       setSelectedFile(null);
       setDocTitle('');
+      setUploadError(null);
       loadDocuments();
     } catch (err: any) {
       setUploadError(err.message || 'File upload failed.');
@@ -286,7 +315,12 @@ export const DocumentLibrary: React.FC = () => {
             <Button variant="secondary" onClick={() => setUploadModalOpen(false)} disabled={uploading}>
               Cancel
             </Button>
-            <Button variant="primary" onClick={handleUpload} isLoading={uploading}>
+            <Button
+              variant="primary"
+              onClick={handleUpload}
+              isLoading={uploading}
+              disabled={!selectedFile || !docTitle.trim()}
+            >
               Extract & Save
             </Button>
           </>
@@ -317,7 +351,18 @@ export const DocumentLibrary: React.FC = () => {
             </p>
           </div>
 
-          <div className="border-2 border-dashed border-[#CBD5E1] rounded-xl p-6 text-center hover:bg-slate-50 transition-colors">
+          <div
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            className={`border-2 border-dashed rounded-xl p-6 text-center transition-all ${
+              isDragging
+                ? 'border-indigo-500 bg-indigo-50/50 scale-[1.01]'
+                : selectedFile
+                ? 'border-emerald-400 bg-emerald-50/30'
+                : 'border-[#CBD5E1] hover:bg-slate-50'
+            }`}
+          >
             <input
               type="file"
               accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
@@ -326,13 +371,34 @@ export const DocumentLibrary: React.FC = () => {
               onChange={handleFileChange}
             />
             <label htmlFor="file-upload" className="cursor-pointer block">
-              <Upload className="w-8 h-8 text-[#3730A3] mx-auto mb-2" />
-              <span className="text-xs font-semibold text-[#0F172A] block">
-                {selectedFile ? selectedFile.name : 'Click to select PDF, DOCX, or TXT file'}
-              </span>
-              <span className="text-[11px] text-slate-500 block mt-1">
-                Text-based notes (PDF, DOCX, TXT). Max size 15 MB.
-              </span>
+              {selectedFile ? (
+                <div className="space-y-2">
+                  <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto">
+                    <CheckCircle2 className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-slate-800 block">
+                      {selectedFile.name}
+                    </span>
+                    <span className="text-[11px] text-emerald-700 font-medium block mt-0.5">
+                      Ready for extraction • {(selectedFile.size / 1024).toFixed(1)} KB
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-indigo-600 hover:underline block pt-1">
+                    Click or drop another file to replace
+                  </span>
+                </div>
+              ) : (
+                <>
+                  <Upload className="w-8 h-8 text-[#3730A3] mx-auto mb-2" />
+                  <span className="text-xs font-semibold text-[#0F172A] block">
+                    Click to browse or drop PDF, DOCX, or TXT file here
+                  </span>
+                  <span className="text-[11px] text-slate-500 block mt-1">
+                    Text-based notes (PDF, DOCX, TXT). Max size 15 MB.
+                  </span>
+                </>
+              )}
             </label>
           </div>
 
