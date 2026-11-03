@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Sparkles, GraduationCap, ShieldCheck, FileText,
-  Layers, CheckSquare, ArrowRight, BookOpen, Clock, BarChart3
+  Layers, CheckSquare, ArrowRight, BookOpen, Clock, BarChart3,
+  Sun, Moon
 } from 'lucide-react';
 import { setActiveUser, getActiveUser, apiFetch, DemoProfile } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
@@ -44,17 +45,45 @@ export const WelcomePage: React.FC = () => {
     }
   };
 
+  const [isDark, setIsDark] = useState<boolean>(() => {
+    return localStorage.getItem('examforge_theme') === 'dark';
+  });
+
+  const toggleTheme = () => {
+    const nextDark = !isDark;
+    setIsDark(nextDark);
+    if (nextDark) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('examforge_theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('examforge_theme', 'light');
+    }
+  };
+
   return (
     <div className="max-w-5xl mx-auto py-8 px-4 animate-fade-in space-y-10">
+      {/* Top Floating Controls */}
+      <div className="flex justify-end">
+        <button
+          onClick={toggleTheme}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#111827] text-slate-700 dark:text-slate-200 shadow-xs hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-medium transition-colors"
+          title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+        >
+          {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
+          <span>{isDark ? 'Light Mode' : 'Dark Mode'}</span>
+        </button>
+      </div>
+
       {/* Top Banner */}
       <div className="text-center space-y-3">
         <Badge variant="indigo" size="md">
           Academic SaaS Demonstration
         </Badge>
-        <h1 className="text-3xl md:text-4xl font-extrabold text-[#0F172A] tracking-tight">
+        <h1 className="text-3xl md:text-4xl font-extrabold text-[#0F172A] dark:text-white tracking-tight">
           ExamForge Assessment Platform
         </h1>
-        <p className="text-sm md:text-base text-[#64748B] max-w-2xl mx-auto leading-relaxed">
+        <p className="text-sm md:text-base text-[#64748B] dark:text-slate-400 max-w-2xl mx-auto leading-relaxed">
           AI-powered, source-grounded question paper generator and college examination workflow system built for rigorous academic evaluation.
         </p>
       </div>

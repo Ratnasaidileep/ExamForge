@@ -30,10 +30,10 @@ export const Button: React.FC<ButtonProps> = ({
   const variantStyles = {
     primary: 'bg-[#3730A3] text-white hover:bg-[#312E81] focus:ring-[#3730A3] shadow-sm',
     teal: 'bg-[#0F766E] text-white hover:bg-[#115E59] focus:ring-[#0F766E] shadow-sm',
-    secondary: 'bg-white text-[#1E293B] border border-[#CBD5E1] hover:bg-slate-50 focus:ring-slate-300 shadow-sm',
-    outline: 'border border-[#3730A3] text-[#3730A3] bg-transparent hover:bg-indigo-50 focus:ring-[#3730A3]',
+    secondary: 'bg-white dark:bg-[#1E293B] text-[#1E293B] dark:text-slate-100 border border-[#CBD5E1] dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 focus:ring-slate-300 dark:focus:ring-slate-700 shadow-sm',
+    outline: 'border border-[#3730A3] dark:border-indigo-400 text-[#3730A3] dark:text-indigo-300 bg-transparent hover:bg-indigo-50 dark:hover:bg-indigo-950/40 focus:ring-[#3730A3]',
     danger: 'bg-[#B91C1C] text-white hover:bg-[#991B1B] focus:ring-[#B91C1C] shadow-sm',
-    ghost: 'text-[#475569] hover:bg-slate-100 hover:text-[#0F172A] focus:ring-slate-200'
+    ghost: 'text-[#475569] dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-[#0F172A] dark:hover:text-white focus:ring-slate-200'
   };
 
   return (

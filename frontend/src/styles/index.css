@@ -4,8 +4,107 @@
 
 @layer base {
   body {
-    @apply bg-[#F8FAFC] text-[#0F172A] font-sans antialiased;
+    @apply bg-[#F8FAFC] text-[#0F172A] font-sans antialiased transition-colors duration-200;
   }
+}
+
+/* Global Dark Mode Overrides for Comprehensive Visual Harmony */
+html.dark body {
+  background-color: #0B0F19 !important;
+  color: #F1F5F9 !important;
+}
+
+html.dark h1,
+html.dark h2,
+html.dark h3,
+html.dark h4 {
+  color: #F8FAFC;
+}
+
+html.dark p.text-slate-500,
+html.dark p.text-slate-600,
+html.dark span.text-slate-500,
+html.dark span.text-slate-400,
+html.dark div.text-slate-500,
+html.dark div.text-slate-400 {
+  color: #94A3B8;
+}
+
+html.dark .bg-white {
+  background-color: #111827 !important;
+  color: #F1F5F9;
+}
+
+html.dark .bg-\[\#F8FAFC\] {
+  background-color: #0B0F19 !important;
+}
+
+html.dark .border-\[\#E2E8F0\] {
+  border-color: #1E293B !important;
+}
+
+html.dark .border-\[\#CBD5E1\] {
+  border-color: #334155 !important;
+}
+
+html.dark .border-slate-200,
+html.dark .border-slate-300 {
+  border-color: #1E293B !important;
+}
+
+html.dark .bg-slate-50,
+html.dark .bg-slate-50\/50,
+html.dark .bg-slate-100 {
+  background-color: #1E293B !important;
+}
+
+html.dark .hover\:bg-slate-50:hover,
+html.dark .hover\:bg-slate-100:hover {
+  background-color: #334155 !important;
+}
+
+html.dark table thead {
+  background-color: #0F172A !important;
+  color: #94A3B8 !important;
+  border-color: #1E293B !important;
+}
+
+html.dark table thead th {
+  color: #94A3B8 !important;
+  border-color: #1E293B !important;
+}
+
+html.dark table tbody tr {
+  border-color: #1E293B !important;
+}
+
+html.dark table tbody tr:hover {
+  background-color: #1E293B !important;
+}
+
+html.dark input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+html.dark select,
+html.dark textarea {
+  background-color: #0F172A !important;
+  color: #F1F5F9 !important;
+  border-color: #334155 !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #64748B !important;
+}
+
+html.dark .text-\[\#0F172A\] {
+  color: #F8FAFC !important;
+}
+
+html.dark .text-\[\#1E293B\] {
+  color: #E2E8F0 !important;
+}
+
+html.dark .text-\[\#64748B\] {
+  color: #94A3B8 !important;
 }
 
 /* Custom scrollbars */
@@ -16,12 +115,21 @@
 ::-webkit-scrollbar-track {
   background: #f1f5f9;
 }
+html.dark ::-webkit-scrollbar-track {
+  background: #0f172a;
+}
 ::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 4px;
 }
+html.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
+}
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #475569;
 }
 
 /* Print styling for question papers */

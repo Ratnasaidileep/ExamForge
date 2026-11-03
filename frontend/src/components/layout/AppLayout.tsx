@@ -99,7 +99,7 @@ export const AppLayout: React.FC = () => {
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col md:flex-row">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0B0F19] text-[#0F172A] dark:text-slate-100 flex flex-col md:flex-row transition-colors duration-200">
       {/* Mobile Drawer Backdrop */}
       {sidebarOpen && (
         <div
@@ -193,18 +193,18 @@ export const AppLayout: React.FC = () => {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top Header */}
-        <header className="sticky top-0 z-30 bg-white border-b border-[#E2E8F0] px-4 md:px-8 py-3 flex items-center justify-between">
+        <header className="sticky top-0 z-30 bg-white dark:bg-[#111827] border-b border-[#E2E8F0] dark:border-slate-800 px-4 md:px-8 py-3 flex items-center justify-between transition-colors duration-200">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg"
+              className="md:hidden p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
             >
               <Menu className="w-5 h-5" />
             </button>
-            <div className="hidden sm:flex items-center gap-2 text-xs text-[#64748B]">
-              <Link to="/" className="hover:text-[#3730A3]">ExamForge</Link>
+            <div className="hidden sm:flex items-center gap-2 text-xs text-[#64748B] dark:text-slate-400">
+              <Link to="/" className="hover:text-[#3730A3] dark:hover:text-indigo-400">ExamForge</Link>
               <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-              <span className="font-medium text-[#0F172A] capitalize">
+              <span className="font-medium text-[#0F172A] dark:text-slate-200 capitalize">
                 {location.pathname.split('/')[2] || 'Home'}
               </span>
             </div>
@@ -215,17 +215,17 @@ export const AppLayout: React.FC = () => {
             {/* Theme Toggle */}
             <button
               onClick={() => setIsDark(!isDark)}
-              className="p-2 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors"
+              className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors"
               title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
             >
-              {isDark ? <Sun className="w-5 h-5 text-amber-500" /> : <Moon className="w-5 h-5 text-slate-600" />}
+              {isDark ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-slate-600 dark:text-slate-300" />}
             </button>
 
             {/* Notifications Dropdown */}
             <div className="relative">
               <button
                 onClick={() => setNotificationsOpen(!notificationsOpen)}
-                className="relative p-2 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors"
+                className="relative p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors"
                 title="Notifications"
               >
                 <Bell className="w-5 h-5" />
@@ -235,9 +235,9 @@ export const AppLayout: React.FC = () => {
               </button>
 
               {notificationsOpen && (
-                <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-[#E2E8F0] p-3 z-50 animate-fade-in">
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-100 mb-2">
-                    <span className="text-xs font-semibold text-[#0F172A]">Notifications</span>
+                <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-[#111827] rounded-xl shadow-xl border border-[#E2E8F0] dark:border-slate-800 p-3 z-50 animate-fade-in">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800 mb-2">
+                    <span className="text-xs font-semibold text-[#0F172A] dark:text-slate-100">Notifications</span>
                     <Badge size="sm" variant="info">{unreadCount} new</Badge>
                   </div>
                   <div className="max-h-64 overflow-y-auto space-y-2">
@@ -248,15 +248,15 @@ export const AppLayout: React.FC = () => {
                         <div
                           key={n.id}
                           className={`p-2 rounded-lg text-xs transition-colors cursor-pointer ${
-                            n.is_read ? 'bg-slate-50 text-slate-600' : 'bg-indigo-50/60 text-[#1E293B] font-medium'
+                            n.is_read ? 'bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400' : 'bg-indigo-50/60 dark:bg-indigo-950/40 text-[#1E293B] dark:text-indigo-200 font-medium'
                           }`}
                           onClick={() => {
                             if (n.link) navigate(n.link);
                             setNotificationsOpen(false);
                           }}
                         >
-                          <div className="font-semibold text-[#0F172A]">{n.title}</div>
-                          <div className="text-[11px] text-slate-500 mt-0.5">{n.message}</div>
+                          <div className="font-semibold text-[#0F172A] dark:text-slate-200">{n.title}</div>
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{n.message}</div>
                         </div>
                       ))
                     )}
@@ -266,7 +266,7 @@ export const AppLayout: React.FC = () => {
             </div>
 
             {/* Role Switcher Dropdown */}
-            <div className="flex items-center bg-slate-100 rounded-lg p-1 border border-slate-200">
+            <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-1 border border-slate-200 dark:border-slate-700">
               <button
                 onClick={() => {
                   const prof = profiles.find(p => p.role === 'faculty');
@@ -275,7 +275,7 @@ export const AppLayout: React.FC = () => {
                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
                   currentUser.role === 'faculty'
                     ? 'bg-[#3730A3] text-white shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 <span>Faculty</span>
@@ -288,7 +288,7 @@ export const AppLayout: React.FC = () => {
                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
                   currentUser.role === 'student'
                     ? 'bg-[#0F766E] text-white shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 <span>Student</span>
