@@ -2,13 +2,17 @@ from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, List, Dict, Any
 import datetime
 
+class StructuredRubricItem(BaseModel):
+    criteria: str = Field(description="The grading criterion or evaluation requirement")
+    marks: float = Field(default=1.0, description="Marks allocated for this criterion")
+
 class StructuredGeneratedQuestion(BaseModel):
     question_text: str = Field(description="The full question text clearly stated.")
     question_type: str = Field(description="One of: mcq, short_answer, long_answer")
     options: Optional[List[str]] = Field(default=None, description="4 distinct choices if question_type is mcq, otherwise null")
     correct_answer: Optional[str] = Field(default=None, description="The correct option letter or text for mcq, otherwise null")
     model_answer: Optional[str] = Field(default=None, description="Detailed model answer for descriptive questions")
-    rubric: Optional[List[Dict[str, Any]]] = Field(default=None, description="Grading criteria and mark allocation for descriptive questions")
+    rubric: Optional[List[StructuredRubricItem]] = Field(default=None, description="Grading criteria and mark allocation for descriptive questions")
     explanation: Optional[str] = Field(default=None, description="Clear rationale explaining why the answer is correct")
     difficulty: str = Field(default="medium", description="easy, medium, or hard")
     marks: float = Field(default=2.0, description="Marks allocated for this question")

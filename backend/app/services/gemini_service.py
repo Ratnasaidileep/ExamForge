@@ -242,21 +242,34 @@ DOCUMENT SOURCE TEXT:
         
         client = genai.Client(api_key=api_key)
         
-        response = client.models.generate_content(
-            model=settings.GEMINI_MODEL,
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                response_schema=StructuredGenerationBatch,
-                temperature=0.2, # low temperature for high grounding accuracy
-            )
-        )
+        # Try primary model and fallbacks to protect against temporary 503 spikes
+        models_to_try = [settings.GEMINI_MODEL, "gemini-3-flash-preview", "gemini-flash-latest", "gemini-2.5-flash"]
+        candidate_models = list(dict.fromkeys(models_to_try))
         
-        if not response.text:
+        response = None
+        last_error = None
+        for m in candidate_models:
+            try:
+                response = client.models.generate_content(
+                    model=m,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        response_mime_type="application/json",
+                        response_schema=StructuredGenerationBatch,
+                        temperature=0.2, # low temperature for high grounding accuracy
+                    )
+                )
+                if response and response.text:
+                    break
+            except Exception as e:
+                last_error = e
+                continue
+
+        if not response or not response.text:
             return {
                 "success": False,
-                "error_type": "EMPTY_RESPONSE",
-                "message": "Gemini API returned an empty response.",
+                "error_type": "GENERATION_FAILED",
+                "message": f"Gemini API request failed: {str(last_error) if last_error else 'Empty response'}",
                 "questions": []
             }
             
