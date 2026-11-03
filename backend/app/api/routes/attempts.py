@@ -35,7 +35,22 @@ def start_attempt(
         raise HTTPException(status_code=400, detail="This paper is in draft status and not open for assessment.")
         
     now = datetime.datetime.utcnow()
+    
+    # Enforce scheduled examination window if defined
+    if paper.window_start and now < paper.window_start:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Exam window has not opened yet. Starts at {paper.window_start.strftime('%Y-%m-%d %H:%M UTC')}."
+        )
+    if paper.window_end and now > paper.window_end:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Exam window has closed. Closed at {paper.window_end.strftime('%Y-%m-%d %H:%M UTC')}."
+        )
+
     deadline = now + datetime.timedelta(minutes=paper.duration_minutes) if paper.duration_minutes else None
+    if paper.window_end and deadline and deadline > paper.window_end:
+        deadline = paper.window_end
     
     attempt_id = f"att_{uuid.uuid4().hex[:12]}"
     attempt = Attempt(

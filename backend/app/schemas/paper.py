@@ -60,6 +60,8 @@ class PaperResponse(BaseModel):
     blueprint_json: Optional[Dict[str, Any]] = None
     validation_results_json: Optional[Dict[str, Any]] = None
     warnings_acknowledged: bool = False
+    window_start: Optional[datetime.datetime] = None
+    window_end: Optional[datetime.datetime] = None
     is_demo_seed: bool = False
     question_count: Optional[int] = None
     published_at: Optional[datetime.datetime] = None
@@ -77,6 +79,8 @@ class PaperCreate(BaseModel):
     total_marks: float = 50.0
     instructions: Optional[str] = None
     blueprint_json: Optional[Dict[str, Any]] = None
+    window_start: Optional[datetime.datetime] = None
+    window_end: Optional[datetime.datetime] = None
 
 class PaperUpdate(BaseModel):
     title: Optional[str] = None
@@ -86,6 +90,8 @@ class PaperUpdate(BaseModel):
     instructions: Optional[str] = None
     blueprint_json: Optional[Dict[str, Any]] = None
     warnings_acknowledged: Optional[bool] = None
+    window_start: Optional[datetime.datetime] = None
+    window_end: Optional[datetime.datetime] = None
     sections: Optional[List[Dict[str, Any]]] = None # Full layout update
 
 class PaperAssembleRequest(BaseModel):

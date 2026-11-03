@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Alert } from '@/components/ui/Alert';
 import { Spinner } from '@/components/ui/Spinner';
+import { MathText } from '@/components/ui/MathText';
 
 export const AssessmentResults: React.FC = () => {
   const { attemptId } = useParams<{ attemptId: string }>();
@@ -208,21 +209,21 @@ export const AssessmentResults: React.FC = () => {
 
                 {/* Question Text */}
                 <div className="text-xs font-semibold text-[#0F172A] leading-relaxed">
-                  {q.question_text}
+                  <MathText text={q.question_text} />
                 </div>
 
                 {/* Submitted Answer Display */}
                 <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-xs space-y-1">
                   <span className="font-bold text-slate-700 block">Your Submitted Answer:</span>
                   <div className="text-slate-800 whitespace-pre-wrap leading-relaxed">
-                    {q.submitted_answer || <span className="italic text-slate-400">No answer submitted.</span>}
+                    {q.submitted_answer ? <MathText text={q.submitted_answer} /> : <span className="italic text-slate-400">No answer submitted.</span>}
                   </div>
                 </div>
 
                 {/* Released Correct Answer for MCQs */}
                 {isMcq && q.correct_answer && (
                   <div className="p-2.5 bg-emerald-50 rounded-lg border border-emerald-200 text-xs text-emerald-900 font-medium">
-                    <strong>Correct Answer:</strong> {q.correct_answer}
+                    <strong>Correct Answer:</strong> <MathText text={q.correct_answer} />
                   </div>
                 )}
 
@@ -230,14 +231,14 @@ export const AssessmentResults: React.FC = () => {
                 {!isMcq && q.model_answer && (
                   <div className="p-3 bg-indigo-50/60 rounded-lg border border-indigo-200 text-xs space-y-1 text-slate-800">
                     <span className="font-bold text-[#3730A3] block">Reference Model Answer:</span>
-                    <p className="whitespace-pre-wrap leading-relaxed">{q.model_answer}</p>
+                    <MathText text={q.model_answer} className="whitespace-pre-wrap leading-relaxed block" />
                   </div>
                 )}
 
                 {/* Explanation */}
                 {q.explanation && (
                   <div className="text-[11px] text-slate-600 bg-slate-50 p-2.5 rounded border border-slate-200 leading-relaxed">
-                    <strong>Explanation:</strong> {q.explanation}
+                    <strong>Explanation:</strong> <MathText text={q.explanation} />
                   </div>
                 )}
 

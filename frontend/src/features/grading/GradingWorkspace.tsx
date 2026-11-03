@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
 import { Alert } from '@/components/ui/Alert';
 import { Spinner } from '@/components/ui/Spinner';
+import { MathText } from '@/components/ui/MathText';
 
 export const GradingWorkspace: React.FC = () => {
   const { attemptId } = useParams<{ attemptId: string }>();
@@ -204,14 +205,14 @@ export const GradingWorkspace: React.FC = () => {
 
                 {/* Question Text */}
                 <div className="text-xs font-semibold text-[#0F172A] leading-relaxed">
-                  {resp.question_text}
+                  <MathText text={resp.question_text} />
                 </div>
 
                 {/* Student's Submitted Answer */}
                 <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-xs space-y-1">
                   <span className="font-bold text-slate-700 block">Student's Submitted Answer:</span>
                   <div className="text-slate-800 whitespace-pre-wrap leading-relaxed font-sans">
-                    {resp.submitted_answer || <span className="italic text-slate-400">No answer provided.</span>}
+                    {resp.submitted_answer ? <MathText text={resp.submitted_answer} /> : <span className="italic text-slate-400">No answer provided.</span>}
                   </div>
                 </div>
 
@@ -224,7 +225,7 @@ export const GradingWorkspace: React.FC = () => {
                   {resp.model_answer && (
                     <div className="text-slate-700 leading-relaxed whitespace-pre-wrap">
                       <strong>Model Answer:</strong><br />
-                      {resp.model_answer}
+                      <MathText text={resp.model_answer} className="block mt-1" />
                     </div>
                   )}
                   {resp.rubric_json && resp.rubric_json.length > 0 && (

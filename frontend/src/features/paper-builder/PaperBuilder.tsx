@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Layers, Plus, Trash2, CheckCircle2, AlertTriangle, FileDown,
-  Sparkles, ShieldCheck, Printer, Save, ArrowLeft, Eye, RefreshCw, Edit3
+  Sparkles, ShieldCheck, Printer, Save, ArrowLeft, Eye, RefreshCw, Edit3,
+  Calendar, Clock
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
@@ -12,6 +13,7 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Alert } from '@/components/ui/Alert';
 import { Spinner } from '@/components/ui/Spinner';
+import { MathText } from '@/components/ui/MathText';
 
 export const PaperBuilder: React.FC = () => {
   const { paperId } = useParams<{ paperId: string }>();
@@ -24,6 +26,22 @@ export const PaperBuilder: React.FC = () => {
   const [validating, setValidating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [windowStart, setWindowStart] = useState<string>('');
+  const [windowEnd, setWindowEnd] = useState<string>('');
+  const [savingSchedule, setSavingSchedule] = useState(false);
+
+  // Helper to format ISO to datetime-local
+  const toLocalInput = (isoStr: string | null) => {
+    if (!isoStr) return '';
+    try {
+      const d = new Date(isoStr);
+      if (isNaN(d.getTime())) return '';
+      const pad = (n: number) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    } catch {
+      return '';
+    }
+  };
 
   // Load paper and question bank
   const loadPaper = async () => {
@@ -49,6 +67,8 @@ export const PaperBuilder: React.FC = () => {
     try {
       const p = await apiFetch(`/papers/${paperId}`);
       setPaper(p);
+      setWindowStart(toLocalInput(p.window_start));
+      setWindowEnd(toLocalInput(p.window_end));
       // Run validation
       const val = await apiFetch(`/papers/${paperId}/validate`, { method: 'POST' });
       setValidation(val);
@@ -56,6 +76,27 @@ export const PaperBuilder: React.FC = () => {
       console.error(e);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveSchedule = async () => {
+    if (!paper) return;
+    setSavingSchedule(true);
+    try {
+      const payload: any = {
+        window_start: windowStart ? new Date(windowStart).toISOString() : null,
+        window_end: windowEnd ? new Date(windowEnd).toISOString() : null
+      };
+      await apiFetch(`/papers/${paper.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      });
+      alert('Examination window schedule saved successfully!');
+      loadPaper();
+    } catch (e: any) {
+      alert(`Failed to update exam window: ${e.message}`);
+    } finally {
+      setSavingSchedule(false);
     }
   };
 
@@ -345,11 +386,86 @@ export const PaperBuilder: React.FC = () => {
             </CardContent>
           </Card>
 
+          {/* Exam Window Schedule Card */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xs uppercase tracking-wider text-slate-500 flex items-center justify-between">
+                <span>2. Scheduled Window</span>
+                <Clock className="w-3.5 h-3.5 text-indigo-600" />
+              </CardTitle>
+              <p className="text-[11px] text-slate-400">Lock exam access strictly to an examination time window.</p>
+            </CardHeader>
+            <CardContent className="space-y-3 pt-0 text-xs">
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                  Window Opens (Start)
+                </label>
+                <input
+                  type="datetime-local"
+                  value={windowStart}
+                  onChange={(e) => setWindowStart(e.target.value)}
+                  className="w-full text-xs rounded-lg border border-slate-300 p-2 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                  Window Closes (End)
+                </label>
+                <input
+                  type="datetime-local"
+                  value={windowEnd}
+                  onChange={(e) => setWindowEnd(e.target.value)}
+                  className="w-full text-xs rounded-lg border border-slate-300 p-2 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-1">
+                <Button
+                  variant="primary"
+                  size="sm"
+                  className="w-full justify-center"
+                  leftIcon={<Save className="w-3.5 h-3.5" />}
+                  onClick={handleSaveSchedule}
+                  isLoading={savingSchedule}
+                >
+                  Save Schedule
+                </Button>
+                {(windowStart || windowEnd) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-slate-500"
+                    onClick={() => {
+                      setWindowStart('');
+                      setWindowEnd('');
+                    }}
+                    title="Clear window inputs"
+                  >
+                    Clear
+                  </Button>
+                )}
+              </div>
+
+              {paper.window_start || paper.window_end ? (
+                <div className="p-2 rounded bg-indigo-50/70 border border-indigo-200 text-[10px] text-indigo-900 leading-relaxed">
+                  <strong>Active Schedule:</strong><br />
+                  Opens: {paper.window_start ? new Date(paper.window_start).toLocaleString() : 'Anytime'}<br />
+                  Closes: {paper.window_end ? new Date(paper.window_end).toLocaleString() : 'No close date'}
+                </div>
+              ) : (
+                <span className="text-[10px] text-slate-400 italic block">
+                  No window set — open anytime after publication.
+                </span>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Question Bank Selector */}
           <Card className="flex flex-col max-h-[500px]">
             <CardHeader className="pb-2">
               <CardTitle className="text-xs uppercase tracking-wider text-slate-500">
-                Approved Questions Bank
+                3. Approved Questions Bank
               </CardTitle>
               <p className="text-[11px] text-slate-400">Click (+) to add to Section</p>
             </CardHeader>
@@ -363,7 +479,7 @@ export const PaperBuilder: React.FC = () => {
                       <span className="font-bold text-slate-700">{rev.marks}M</span>
                     </div>
                     <div className="text-[11px] font-medium text-slate-800 line-clamp-2">
-                      {rev.question_text}
+                      <MathText text={rev.question_text} />
                     </div>
                     <div className="flex items-center justify-between pt-1 border-t border-slate-100">
                       <span className="text-[10px] text-slate-400">Unit {rev.unit_number}</span>
@@ -467,7 +583,7 @@ export const PaperBuilder: React.FC = () => {
                                 </span>
                                 <div className="flex-1 min-w-0">
                                   <div className="text-xs text-slate-800 line-clamp-2 leading-relaxed">
-                                    {rev.question_text || it.question_text}
+                                    <MathText text={rev.question_text || it.question_text} />
                                   </div>
                                   <div className="flex items-center gap-2 mt-1 text-[10px] text-slate-400">
                                     <span className="uppercase">{rev.question_type}</span>
@@ -583,7 +699,7 @@ export const PaperBuilder: React.FC = () => {
                       <div key={iIdx} className="space-y-1.5 pl-1">
                         <div className="flex justify-between font-sans text-xs">
                           <span className="font-semibold text-slate-900">
-                            Q{iIdx + 1}. {rev.question_text || it.question_text}
+                            Q{iIdx + 1}. <MathText text={rev.question_text || it.question_text} />
                           </span>
                           <span className="font-bold text-indigo-900 font-mono ml-2">
                             [{it.marks}]
@@ -594,7 +710,7 @@ export const PaperBuilder: React.FC = () => {
                           <div className="grid grid-cols-2 gap-x-4 gap-y-1 font-sans text-[11px] pl-4 text-slate-800">
                             {rev.options_json.map((opt: string, optI: number) => (
                               <div key={optI}>
-                                <strong>({String.fromCharCode(65 + optI)})</strong> {opt}
+                                <strong>({String.fromCharCode(65 + optI)})</strong> <MathText text={opt} />
                               </div>
                             ))}
                           </div>

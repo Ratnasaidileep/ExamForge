@@ -13,6 +13,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Spinner } from '@/components/ui/Spinner';
+import { MathText } from '@/components/ui/MathText';
 
 export const QuestionBank: React.FC = () => {
   const [data, setData] = useState<any>({ items: [], total: 0, page: 1, total_pages: 1 });
@@ -302,7 +303,7 @@ export const QuestionBank: React.FC = () => {
 
                     {/* Question Text */}
                     <div className="text-xs font-semibold text-[#0F172A] leading-relaxed">
-                      {rev.question_text}
+                      <MathText text={rev.question_text} />
                     </div>
 
                     {/* MCQ Options Display */}
@@ -320,7 +321,7 @@ export const QuestionBank: React.FC = () => {
                               }`}
                             >
                               <span className="font-bold">{String.fromCharCode(65 + optIdx)}.</span>
-                              <span className="truncate">{opt}</span>
+                              <span className="truncate"><MathText text={opt} /></span>
                             </div>
                           );
                         })}
@@ -461,7 +462,7 @@ export const QuestionBank: React.FC = () => {
                 <span>Active Revision (Rev {selectedQuestion.current_revision.revision_number})</span>
                 <span>{selectedQuestion.status.toUpperCase()}</span>
               </div>
-              <p className="text-slate-800 font-medium">{selectedQuestion.current_revision.question_text}</p>
+              <p className="text-slate-800 font-medium"><MathText text={selectedQuestion.current_revision.question_text} /></p>
               <div className="text-[11px] text-slate-500 mt-2">
                 Created: {formatDate(selectedQuestion.current_revision.created_at)}
               </div>

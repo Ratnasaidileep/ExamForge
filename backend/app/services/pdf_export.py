@@ -1,4 +1,6 @@
 import os
+import re
+import html
 import uuid
 from pathlib import Path
 from typing import List, Dict, Any
@@ -8,6 +10,104 @@ from reportlab.lib.units import inch
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable, KeepTogether
 from app.core.config import settings
+
+def format_latex_for_pdf(text: str) -> str:
+    """
+    Cleans and formats LaTeX STEM equations for ReportLab PDF typography.
+    Converts:
+      - $$...$$ and $...$ math blocks
+      - \\frac{a}{b} -> (a / b)
+      - \\sqrt{x} -> √(x)
+      - Superscripts: x^2 or x^{2n} -> x<sup>2</sup> or x<sup>2n</sup>
+      - Subscripts: x_1 or x_{in} -> x<sub>1</sub> or x<sub>in</sub>
+      - Math symbols: \\times, \\pm, \\cdot, \\leq, \\geq, \\neq, \\approx, \\alpha, \\beta, etc.
+      - XML specials escaping while preserving supported ReportLab tags (b, i, sub, sup).
+    """
+    if not text:
+        return ""
+    
+    latex_replacements = [
+        (r'\\times', '×'),
+        (r'\\cdot', '·'),
+        (r'\\pm', '±'),
+        (r'\\mp', '∓'),
+        (r'\\approx', '≈'),
+        (r'\\neq', '≠'),
+        (r'\\leq', '≤'),
+        (r'\\le\b', '≤'),
+        (r'\\geq', '≥'),
+        (r'\\ge\b', '≥'),
+        (r'\\infty', '∞'),
+        (r'\\partial', '∂'),
+        (r'\\nabla', '∇'),
+        (r'\\sum', '∑'),
+        (r'\\prod', '∏'),
+        (r'\\int', '∫'),
+        (r'\\alpha', 'α'),
+        (r'\\beta', 'β'),
+        (r'\\gamma', 'γ'),
+        (r'\\theta', 'θ'),
+        (r'\\lambda', 'λ'),
+        (r'\\mu', 'μ'),
+        (r'\\pi', 'π'),
+        (r'\\sigma', 'σ'),
+        (r'\\omega', 'ω'),
+        (r'\\Delta', 'Δ'),
+        (r'\\rightarrow', '→'),
+        (r'\\to', '→'),
+        (r'\\leftarrow', '←'),
+    ]
+
+    def replace_fractions(s):
+        pattern = re.compile(r'\\frac\{([^{}]+)\}\{([^{}]+)\}')
+        while pattern.search(s):
+            s = pattern.sub(r'(\1 / \2)', s)
+        return s
+
+    def replace_sqrt(s):
+        pattern = re.compile(r'\\sqrt\{([^{}]+)\}')
+        while pattern.search(s):
+            s = pattern.sub(r'√(\1)', s)
+        return s
+
+    processed = text
+    # Escape standalone & that isn't part of an existing entity
+    processed = re.sub(r'&(?!(?:amp|lt|gt|quot|apos);)', '&amp;', processed)
+    
+    # Process fractions and sqrts
+    processed = replace_fractions(processed)
+    processed = replace_sqrt(processed)
+    
+    # Greek & math symbols
+    for pattern, repl in latex_replacements:
+        processed = re.sub(pattern, repl, processed)
+
+    # Convert superscripts: x^{2} or x^2 -> x<sup>2</sup>
+    processed = re.sub(r'\^\{([^{}]+)\}', r'<sup>\1</sup>', processed)
+    processed = re.sub(r'\^([a-zA-Z0-9])', r'<sup>\1</sup>', processed)
+
+    # Convert subscripts: x_{i} or x_i -> x<sub>i</sub>
+    processed = re.sub(r'_\{([^{}]+)\}', r'<sub>\1</sub>', processed)
+    processed = re.sub(r'_([a-zA-Z0-9])', r'<sub>\1</sub>', processed)
+
+    # Strip $$...$$ and $...$
+    processed = processed.replace('$$', '').replace('$', '')
+    
+    # Convert newlines to <br/>
+    processed = processed.replace('\n', '<br/>')
+    
+    # Escape any remaining rogue < and > that are not valid tags (b, i, sup, sub, u, br, font)
+    tag_pattern = re.compile(r'(</?(?:b|i|u|sup|sub|br|font)[^>]*>)', re.IGNORECASE)
+    parts = tag_pattern.split(processed)
+    sanitized = []
+    for part in parts:
+        if tag_pattern.match(part):
+            sanitized.append(part)
+        else:
+            p = part.replace('<', '&lt;').replace('>', '&gt;')
+            sanitized.append(p)
+
+    return ''.join(sanitized)
 
 def generate_question_paper_pdf(paper_dict: Dict[str, Any], sections_list: List[Dict[str, Any]]) -> str:
     """
@@ -173,7 +273,8 @@ def generate_question_paper_pdf(paper_dict: Dict[str, Any], sections_list: List[
         sec_items = sec.get('items', [])
         for item in sec_items:
             rev = item.get('revision') or {}
-            q_text = rev.get('question_text') or item.get('question_text') or "Question Text"
+            raw_text = rev.get('question_text') or item.get('question_text') or "Question Text"
+            q_text = format_latex_for_pdf(raw_text)
             marks = item.get('marks') or rev.get('marks', 2.0)
             q_type = rev.get('question_type') or "short_answer"
             options = rev.get('options_json') or []
@@ -200,9 +301,10 @@ def generate_question_paper_pdf(paper_dict: Dict[str, Any], sections_list: List[
                 letters = ["A", "B", "C", "D", "E"]
                 for i, opt in enumerate(options):
                     letter_str = letters[i] if i < len(letters) else f"({i+1})"
+                    opt_clean = format_latex_for_pdf(opt)
                     opt_rows.append([
                         Paragraph("", q_num_style),
-                        Paragraph(f"<b>({letter_str})</b> {opt}", option_style),
+                        Paragraph(f"<b>({letter_str})</b> {opt_clean}", option_style),
                         Paragraph("", marks_style)
                     ])
                 opt_table = Table(opt_rows, colWidths=[30, 435, 45])
@@ -302,13 +404,14 @@ def generate_answer_key_pdf(paper_dict: Dict[str, Any], sections_list: List[Dict
         
         for item in sec.get('items', []):
             rev = item.get('revision') or {}
-            q_text = rev.get('question_text') or "Question Text"
+            raw_text = rev.get('question_text') or "Question Text"
+            q_text = format_latex_for_pdf(raw_text)
             marks = item.get('marks') or rev.get('marks', 2.0)
             q_type = rev.get('question_type') or "short_answer"
-            correct_ans = rev.get('correct_answer') or "N/A"
-            model_ans = rev.get('model_answer') or ""
+            correct_ans = format_latex_for_pdf(rev.get('correct_answer') or "N/A")
+            model_ans = format_latex_for_pdf(rev.get('model_answer') or "")
             rubric = rev.get('rubric_json') or []
-            explanation = rev.get('explanation') or ""
+            explanation = format_latex_for_pdf(rev.get('explanation') or "")
             excerpt = rev.get('supporting_excerpt') or ""
             
             box_content = [

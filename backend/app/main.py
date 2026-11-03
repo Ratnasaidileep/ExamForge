@@ -1,4 +1,5 @@
 import datetime
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -12,12 +13,23 @@ from app.api.routes import (
     papers, attempts, grading, analytics, notifications
 )
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    Base.metadata.create_all(bind=engine)
+    db = SessionLocal()
+    try:
+        seed_database(db, force=False)
+    finally:
+        db.close()
+    yield
+
 app = FastAPI(
     title="ExamForge API",
     version="1.0.0",
     description="AI-powered question-paper generation and college assessment platform",
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
+    lifespan=lifespan
 )
 
 # CORS
@@ -28,16 +40,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Startup: initialize tables and seed data if clean
-@app.on_event("startup")
-def startup_event():
-    Base.metadata.create_all(bind=engine)
-    db = SessionLocal()
-    try:
-        seed_database(db, force=False)
-    finally:
-        db.close()
 
 # Global exception handlers
 @app.exception_handler(HTTPException)

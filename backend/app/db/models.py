@@ -228,6 +228,8 @@ class Paper(Base):
     blueprint_json = Column(JSON, nullable=True)
     validation_results_json = Column(JSON, nullable=True)
     warnings_acknowledged = Column(Boolean, default=False)
+    window_start = Column(DateTime, nullable=True)
+    window_end = Column(DateTime, nullable=True)
     is_demo_seed = Column(Boolean, default=False)
     published_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)

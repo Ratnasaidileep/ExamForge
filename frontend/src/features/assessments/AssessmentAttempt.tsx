@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { Spinner } from '@/components/ui/Spinner';
+import { MathText } from '@/components/ui/MathText';
 
 export const AssessmentAttempt: React.FC = () => {
   const { attemptId } = useParams<{ attemptId: string }>();
@@ -254,7 +255,7 @@ export const AssessmentAttempt: React.FC = () => {
 
               {/* Question Text */}
               <div className="text-sm font-semibold text-[#0F172A] leading-relaxed">
-                {currentQ.question_text}
+                <MathText text={currentQ.question_text} />
               </div>
 
               {/* Input Area Based on Question Type */}
@@ -282,7 +283,7 @@ export const AssessmentAttempt: React.FC = () => {
                         >
                           {String.fromCharCode(65 + optIdx)}
                         </div>
-                        <span className="flex-1">{opt}</span>
+                        <span className="flex-1"><MathText text={opt} /></span>
                       </button>
                     );
                   })}
@@ -290,16 +291,26 @@ export const AssessmentAttempt: React.FC = () => {
               ) : (
                 <div className="space-y-2 pt-2">
                   <div className="flex justify-between items-center text-xs text-slate-500">
-                    <span>Type your technical answer below:</span>
+                    <span>Type your technical answer below (LaTeX equations like $E=mc^2$ supported):</span>
                     <span>{currentAnswer.length} characters</span>
                   </div>
                   <textarea
                     rows={8}
                     value={currentAnswer}
                     onChange={(e) => handleAnswerChange(e.target.value)}
-                    placeholder="Enter your detailed answer here..."
+                    placeholder="Enter your detailed answer here... (You can write math formulas like $x^2$ or $$\frac{a}{b}$$)"
                     className="w-full text-xs rounded-xl border border-slate-300 p-4 focus:outline-none focus:ring-2 focus:ring-teal-200 leading-relaxed font-sans"
                   />
+                  {currentAnswer.includes('$') && (
+                    <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-teal-700 block">
+                        Live LaTeX Formula Preview
+                      </span>
+                      <div className="text-xs text-slate-900">
+                        <MathText text={currentAnswer} />
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>

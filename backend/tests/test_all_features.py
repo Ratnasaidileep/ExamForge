@@ -392,3 +392,146 @@ def test_paper_section_controls():
     # Verify updated section list
     updated_p = client.get(f"/api/v1/papers/{paper_id}").json()
     assert any(s["name"] == "Section D: Case Study Analysis" for s in updated_p["sections"])
+
+# 17. LaTeX / KaTeX equation PDF formatting and generation
+def test_latex_pdf_formatting():
+    from app.services.pdf_export import format_latex_for_pdf, generate_question_paper_pdf, generate_answer_key_pdf
+    
+    # Check equation conversion
+    raw_latex = "Calculate the energy $E = mc^2$ and the ratio $$\\frac{a + b}{c}$$ when $\\alpha = 0.05$."
+    formatted = format_latex_for_pdf(raw_latex)
+    assert "mc<sup>2</sup>" in formatted
+    assert "(a + b / c)" in formatted
+    assert "α" in formatted
+    assert "$" not in formatted
+
+    # Test PDF generation with LaTeX content
+    sample_paper = {
+        "id": "test_latex_paper",
+        "title": "STEM Exam: Modern Physics $E = mc^2$",
+        "subject_id": "PHY-101",
+        "duration_minutes": 60,
+        "total_marks": 20.0
+    }
+    sample_sections = [
+        {
+            "name": "Section A: Quantum Mechanics",
+            "total_marks": 20.0,
+            "items": [
+                {
+                    "marks": 5.0,
+                    "question_text": "Derive the wave equation $$\\frac{\\partial^2 \\psi}{\\partial x^2} = \\frac{1}{v^2} \\frac{\\partial^2 \\psi}{\\partial t^2}$$",
+                    "revision": {
+                        "question_text": "Derive the wave equation $$\\frac{\\partial^2 \\psi}{\\partial x^2} = \\frac{1}{v^2} \\frac{\\partial^2 \\psi}{\\partial t^2}$$",
+                        "question_type": "short_answer",
+                        "marks": 5.0,
+                        "model_answer": "By separating variables $\\psi(x,t) = X(x)T(t)$...",
+                        "rubric_json": [{"criteria": "Derivation", "marks": 5.0}],
+                        "explanation": "Fundamental wave mechanics equation."
+                    }
+                }
+            ]
+        }
+    ]
+    
+    paper_pdf_path = generate_question_paper_pdf(sample_paper, sample_sections)
+    assert os.path.exists(paper_pdf_path)
+    assert os.path.getsize(paper_pdf_path) > 1000
+
+    key_pdf_path = generate_answer_key_pdf(sample_paper, sample_sections)
+    assert os.path.exists(key_pdf_path)
+    assert os.path.getsize(key_pdf_path) > 1000
+
+# 18. Scheduled Window Examinations
+def test_scheduled_window_examinations():
+    import datetime
+    now = datetime.datetime.utcnow()
+
+    # 1. Create paper
+    p_resp = client.post(
+        "/api/v1/papers",
+        json={"title": "Scheduled Finals Exam", "total_marks": 30.0, "duration_minutes": 45},
+        headers={"X-Demo-Role": "faculty"}
+    )
+    assert p_resp.status_code == 200
+    paper_id = p_resp.json()["id"]
+
+    # Assemble questions into paper
+    asm_resp = client.post(
+        f"/api/v1/papers/{paper_id}/assemble",
+        json={
+            "blueprint": {
+                "target_marks": 30.0,
+                "duration_minutes": 45,
+                "difficulty_target": {"easy": 40, "medium": 40, "hard": 20},
+                "type_target": {"mcq": 5, "short_answer": 2, "long_answer": 1}
+            }
+        },
+        headers={"X-Demo-Role": "faculty"}
+    )
+    assert asm_resp.status_code == 200
+
+    # Publish paper
+    pub_resp = client.post(f"/api/v1/papers/{paper_id}/publish", headers={"X-Demo-Role": "faculty"})
+    assert pub_resp.status_code == 200
+
+    # 2. Set window in future (starts 2 hours from now)
+    future_start = (now + datetime.timedelta(hours=2)).isoformat()
+    future_end = (now + datetime.timedelta(hours=4)).isoformat()
+    patch_resp = client.patch(
+        f"/api/v1/papers/{paper_id}",
+        json={"window_start": future_start, "window_end": future_end},
+        headers={"X-Demo-Role": "faculty"}
+    )
+    assert patch_resp.status_code == 200
+    assert patch_resp.json()["window_start"] is not None
+
+    # Student attempts before window opens -> BLOCKED
+    att_resp_early = client.post(
+        "/api/v1/attempts",
+        json={"paper_id": paper_id, "mode": "assessment"},
+        headers={"X-Demo-Role": "student"}
+    )
+    assert att_resp_early.status_code == 400
+    assert "Exam window has not opened yet" in att_resp_early.json()["error"]
+
+    # 3. Set window in past (closed 1 hour ago)
+    past_start = (now - datetime.timedelta(hours=3)).isoformat()
+    past_end = (now - datetime.timedelta(hours=1)).isoformat()
+    patch_resp2 = client.patch(
+        f"/api/v1/papers/{paper_id}",
+        json={"window_start": past_start, "window_end": past_end},
+        headers={"X-Demo-Role": "faculty"}
+    )
+    assert patch_resp2.status_code == 200
+
+    # Student attempts after window closed -> BLOCKED
+    att_resp_late = client.post(
+        "/api/v1/attempts",
+        json={"paper_id": paper_id, "mode": "assessment"},
+        headers={"X-Demo-Role": "student"}
+    )
+    assert att_resp_late.status_code == 400
+    assert "Exam window has closed" in att_resp_late.json()["error"]
+
+    # 4. Set window currently active (opened 10 mins ago, closes in 1 hour)
+    active_start = (now - datetime.timedelta(minutes=10)).isoformat()
+    active_end = (now + datetime.timedelta(hours=1)).isoformat()
+    patch_resp3 = client.patch(
+        f"/api/v1/papers/{paper_id}",
+        json={"window_start": active_start, "window_end": active_end},
+        headers={"X-Demo-Role": "faculty"}
+    )
+    assert patch_resp3.status_code == 200
+
+    # Student attempts within active window -> SUCCESS
+    att_resp_active = client.post(
+        "/api/v1/attempts",
+        json={"paper_id": paper_id, "mode": "assessment"},
+        headers={"X-Demo-Role": "student"}
+    )
+    assert att_resp_active.status_code == 200
+    att_data = att_resp_active.json()
+    assert att_data["status"] == "in_progress"
+    assert att_data["remaining_seconds"] > 0
+

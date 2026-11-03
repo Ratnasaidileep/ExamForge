@@ -59,6 +59,8 @@ def create_paper(
             "type_target": {"mcq": 5, "short_answer": 4, "long_answer": 2}
         },
         warnings_acknowledged=False,
+        window_start=payload.window_start,
+        window_end=payload.window_end,
         is_demo_seed=False
     )
     db.add(paper)
@@ -153,6 +155,8 @@ def get_paper(id: str, db: Session = Depends(get_db)):
         "blueprint_json": paper.blueprint_json,
         "validation_results_json": paper.validation_results_json,
         "warnings_acknowledged": paper.warnings_acknowledged,
+        "window_start": paper.window_start,
+        "window_end": paper.window_end,
         "is_demo_seed": paper.is_demo_seed,
         "published_at": paper.published_at,
         "created_at": paper.created_at,
@@ -184,6 +188,10 @@ def update_paper(
         paper.blueprint_json = payload.blueprint_json
     if payload.warnings_acknowledged is not None:
         paper.warnings_acknowledged = payload.warnings_acknowledged
+    if payload.window_start is not None:
+        paper.window_start = payload.window_start
+    if payload.window_end is not None:
+        paper.window_end = payload.window_end
         
     # If sections & items layout updated
     if payload.sections is not None:

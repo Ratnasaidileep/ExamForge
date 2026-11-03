@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Alert } from '@/components/ui/Alert';
 import { Spinner } from '@/components/ui/Spinner';
+import { MathText } from '@/components/ui/MathText';
 
 export const GenerationReview: React.FC = () => {
   const { generationId } = useParams<{ generationId: string }>();
@@ -236,7 +237,7 @@ export const GenerationReview: React.FC = () => {
 
                 {/* Question Text */}
                 <div className="text-sm font-semibold text-[#0F172A] leading-relaxed">
-                  {q.question_text}
+                  <MathText text={q.question_text} />
                 </div>
 
                 {/* MCQ Options */}
@@ -254,7 +255,7 @@ export const GenerationReview: React.FC = () => {
                           }`}
                         >
                           <span className="font-bold">{String.fromCharCode(65 + optIdx)}.</span>
-                          <span>{opt}</span>
+                          <span><MathText text={opt} /></span>
                           {isCorrect && (
                             <span className="ml-auto text-[10px] text-emerald-700 font-bold uppercase">Correct</span>
                           )}
@@ -270,7 +271,7 @@ export const GenerationReview: React.FC = () => {
                     {q.model_answer && (
                       <div>
                         <span className="font-bold text-[#1E293B] block mb-1">Model Answer:</span>
-                        <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">{q.model_answer}</p>
+                        <MathText text={q.model_answer} className="text-slate-700 leading-relaxed whitespace-pre-wrap block" />
                       </div>
                     )}
                     {q.rubric_json && q.rubric_json.length > 0 && (
