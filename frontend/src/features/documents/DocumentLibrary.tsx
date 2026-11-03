@@ -1,0 +1,396 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  FileText, Upload, Trash2, Eye, Sparkles, AlertCircle,
+  CheckCircle2, Search, Filter, BookOpen, Clock, Tag
+} from 'lucide-react';
+import { apiFetch } from '@/lib/api';
+import { formatDate, formatFileSize } from '@/lib/formatters';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
+import { Modal } from '@/components/ui/Modal';
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
+import { Spinner } from '@/components/ui/Spinner';
+import { Alert } from '@/components/ui/Alert';
+
+export const DocumentLibrary: React.FC = () => {
+  const navigate = useNavigate();
+  const [documents, setDocuments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  
+  // Upload modal state
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [docTitle, setDocTitle] = useState('');
+  const [unitNumber, setUnitNumber] = useState(1);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  // Preview modal state
+  const [previewDoc, setPreviewDoc] = useState<any | null>(null);
+  const [previewContent, setPreviewContent] = useState<any | null>(null);
+  const [loadingContent, setLoadingContent] = useState(false);
+
+  // Delete modal state
+  const [deleteDoc, setDeleteDoc] = useState<any | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const loadDocuments = () => {
+    setLoading(true);
+    apiFetch(`/documents?search=${encodeURIComponent(search)}`)
+      .then(setDocuments)
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadDocuments();
+  }, [search]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setSelectedFile(file);
+      if (!docTitle) {
+        setDocTitle(file.name.replace(/\.[^/.]+$/, '').replace(/_/g, ' '));
+      }
+    }
+  };
+
+  const handleUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedFile) {
+      setUploadError('Please select a PDF or DOCX file to upload.');
+      return;
+    }
+    
+    setUploading(true);
+    setUploadError(null);
+    
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+    formData.append('title', docTitle);
+    formData.append('subject_id', 'ITS-401');
+    formData.append('unit_number', String(unitNumber));
+    
+    try {
+      await apiFetch('/documents', {
+        method: 'POST',
+        body: formData
+      });
+      setUploadModalOpen(false);
+      setSelectedFile(null);
+      setDocTitle('');
+      loadDocuments();
+    } catch (err: any) {
+      setUploadError(err.message || 'File upload failed.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleOpenPreview = async (doc: any) => {
+    setPreviewDoc(doc);
+    setLoadingContent(true);
+    try {
+      const content = await apiFetch(`/documents/${doc.id}/content`);
+      setPreviewContent(content);
+    } catch (e: any) {
+      setPreviewContent({ full_text: 'Failed to load text content.' });
+    } finally {
+      setLoadingContent(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteDoc) return;
+    setDeleting(true);
+    try {
+      await apiFetch(`/documents/${deleteDoc.id}`, { method: 'DELETE' });
+      setDeleteDoc(null);
+      loadDocuments();
+    } catch (e: any) {
+      alert(`Deletion failed: ${e.message}`);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6 max-w-7xl mx-auto animate-fade-in">
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-[#E2E8F0]">
+        <div>
+          <h1 className="text-2xl font-bold text-[#0F172A]">Document Library</h1>
+          <p className="text-xs text-[#64748B]">
+            Upload course notes and syllabus documents to ground AI question generation.
+          </p>
+        </div>
+
+        <Button
+          variant="primary"
+          leftIcon={<Upload className="w-4 h-4" />}
+          onClick={() => {
+            setUploadError(null);
+            setUploadModalOpen(true);
+          }}
+        >
+          Upload Course Notes
+        </Button>
+      </div>
+
+      {/* Search and Filters Bar */}
+      <div className="flex items-center gap-3 bg-white p-3 rounded-xl border border-[#E2E8F0] shadow-sm">
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+          <input
+            type="text"
+            placeholder="Search notes by title or keywords..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-9 pr-4 py-1.5 text-xs rounded-lg border border-[#CBD5E1] focus:outline-none focus:ring-2 focus:ring-indigo-100"
+          />
+        </div>
+        <Badge variant="neutral">ITS-401 Subject</Badge>
+      </div>
+
+      {/* Documents Table */}
+      <Card>
+        <CardContent className="p-0">
+          {loading ? (
+            <Spinner size="lg" className="h-64" />
+          ) : documents.length === 0 ? (
+            <div className="p-12 text-center text-slate-400 text-xs">
+              No curriculum documents found. Click "Upload Course Notes" to get started.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-[#F8FAFC] text-[#64748B] font-semibold border-b border-[#E2E8F0]">
+                  <tr>
+                    <th className="py-3 px-4">Document Title</th>
+                    <th className="py-3 px-4">Unit</th>
+                    <th className="py-3 px-4">Format / Size</th>
+                    <th className="py-3 px-4">Extraction Status</th>
+                    <th className="py-3 px-4">Uploaded</th>
+                    <th className="py-3 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {documents.map((doc) => (
+                    <tr key={doc.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="py-3 px-4 font-medium text-[#0F172A]">
+                        <div className="flex items-center gap-2">
+                          <FileText className="w-4 h-4 text-[#3730A3] flex-shrink-0" />
+                          <div>
+                            <div className="font-semibold">{doc.title}</div>
+                            <div className="text-[11px] text-slate-400">{doc.original_filename}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-slate-600">Unit {doc.unit_number || 'All'}</td>
+                      <td className="py-3 px-4 text-slate-500">
+                        <span className="uppercase font-semibold">{doc.file_type}</span> • {formatFileSize(doc.file_size)}
+                      </td>
+                      <td className="py-3 px-4">
+                        <Badge
+                          variant={
+                            doc.extraction_status === 'completed'
+                              ? 'success'
+                              : doc.extraction_status === 'scanned_ocr_unsupported'
+                              ? 'warning'
+                              : 'error'
+                          }
+                          size="sm"
+                        >
+                          {doc.extraction_status === 'scanned_ocr_unsupported'
+                            ? 'Scanned (No OCR)'
+                            : doc.extraction_status}
+                        </Badge>
+                      </td>
+                      <td className="py-3 px-4 text-slate-500">{formatDate(doc.created_at)}</td>
+                      <td className="py-3 px-4 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            title="Preview Extracted Text & Headings"
+                            onClick={() => handleOpenPreview(doc)}
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button
+                            variant="teal"
+                            size="sm"
+                            title="Generate Questions from this Document"
+                            onClick={() => navigate(`/faculty/generate?docId=${doc.id}`)}
+                            leftIcon={<Sparkles className="w-3 h-3" />}
+                          >
+                            Generate
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-500 hover:text-red-700"
+                            title="Delete Document"
+                            onClick={() => setDeleteDoc(doc)}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Upload Document Modal */}
+      <Modal
+        isOpen={uploadModalOpen}
+        onClose={() => setUploadModalOpen(false)}
+        title="Upload Curriculum Notes"
+        description="Supported formats: PDF or DOCX (up to 15 MB)"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setUploadModalOpen(false)} disabled={uploading}>
+              Cancel
+            </Button>
+            <Button variant="primary" onClick={handleUpload} isLoading={uploading}>
+              Extract & Save
+            </Button>
+          </>
+        }
+      >
+        <form onSubmit={handleUpload} className="space-y-4">
+          {uploadError && (
+            <Alert type="error" title="Upload Failed">
+              {uploadError}
+            </Alert>
+          )}
+
+          <div className="border-2 border-dashed border-[#CBD5E1] rounded-xl p-6 text-center hover:bg-slate-50 transition-colors">
+            <input
+              type="file"
+              accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              id="file-upload"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+            <label htmlFor="file-upload" className="cursor-pointer block">
+              <Upload className="w-8 h-8 text-[#3730A3] mx-auto mb-2" />
+              <span className="text-xs font-semibold text-[#0F172A] block">
+                {selectedFile ? selectedFile.name : 'Click to select PDF or DOCX file'}
+              </span>
+              <span className="text-[11px] text-slate-500 block mt-1">
+                Text-based files only. Max size 15 MB.
+              </span>
+            </label>
+          </div>
+
+          <Input
+            label="Document Title"
+            value={docTitle}
+            onChange={(e) => setDocTitle(e.target.value)}
+            placeholder="e.g. Unit 2: Advanced Traffic Management Systems Notes"
+            required
+          />
+
+          <div className="grid grid-cols-2 gap-3">
+            <Select
+              label="Course Unit"
+              value={unitNumber}
+              onChange={(e) => setUnitNumber(Number(e.target.value))}
+              options={[
+                { value: 1, label: 'Unit 1: Introduction to ITS' },
+                { value: 2, label: 'Unit 2: ATMS Systems' },
+                { value: 3, label: 'Unit 3: ATIS Guidance' },
+                { value: 4, label: 'Unit 4: CAV & Platooning' }
+              ]}
+            />
+            <Input
+              label="Subject Code"
+              value="ITS-401"
+              disabled
+              helperText="Intelligent Transport Systems"
+            />
+          </div>
+        </form>
+      </Modal>
+
+      {/* Preview Extracted Text Modal */}
+      <Modal
+        isOpen={!!previewDoc}
+        onClose={() => setPreviewDoc(null)}
+        title={previewDoc?.title || 'Document Preview'}
+        description={`File: ${previewDoc?.original_filename || ''}`}
+        maxWidth="3xl"
+        footer={
+          <Button variant="secondary" onClick={() => setPreviewDoc(null)}>
+            Close
+          </Button>
+        }
+      >
+        {loadingContent ? (
+          <Spinner size="md" className="h-48" />
+        ) : (
+          <div className="space-y-4">
+            {/* Detected Headings */}
+            {previewDoc?.detected_headings && previewDoc.detected_headings.length > 0 && (
+              <div>
+                <h4 className="text-xs font-bold text-[#0F172A] mb-2 uppercase tracking-wider">
+                  Detected Outline & Headings
+                </h4>
+                <div className="flex flex-wrap gap-1.5">
+                  {previewDoc.detected_headings.map((h: string, idx: number) => (
+                    <span key={idx} className="px-2 py-1 rounded bg-slate-100 text-slate-700 text-[11px]">
+                      {h}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Extracted Text Body */}
+            <div>
+              <h4 className="text-xs font-bold text-[#0F172A] mb-1.5 uppercase tracking-wider">
+                Extracted Text Content ({previewContent?.page_count || 1} pages)
+              </h4>
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg max-h-96 overflow-y-auto text-xs font-mono text-slate-800 leading-relaxed whitespace-pre-wrap">
+                {previewContent?.full_text || 'No text content available.'}
+              </div>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={!!deleteDoc}
+        onClose={() => setDeleteDoc(null)}
+        title="Delete Document?"
+        description="Are you sure you want to delete this curriculum document?"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setDeleteDoc(null)} disabled={deleting}>
+              Cancel
+            </Button>
+            <Button variant="danger" onClick={handleDelete} isLoading={deleting}>
+              Confirm Delete
+            </Button>
+          </>
+        }
+      >
+        <p className="text-xs text-slate-600 leading-relaxed">
+          Deleting <strong>"{deleteDoc?.title}"</strong> will remove it from the document library. Historical questions and question papers already created will preserve their citations and text snapshots.
+        </p>
+      </Modal>
+    </div>
+  );
+};
