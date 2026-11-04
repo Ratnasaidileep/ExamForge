@@ -17,10 +17,12 @@ import { MathText } from '@/components/ui/MathText';
 
 export const QuestionBank: React.FC = () => {
   const [data, setData] = useState<any>({ items: [], total: 0, page: 1, total_pages: 1 });
+  const [subjects, setSubjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Filters
   const [search, setSearch] = useState('');
+  const [subjectFilter, setSubjectFilter] = useState('');
   const [questionType, setQuestionType] = useState('');
   const [difficulty, setDifficulty] = useState('');
   const [status, setStatus] = useState('');
@@ -32,6 +34,12 @@ export const QuestionBank: React.FC = () => {
   const [editData, setEditData] = useState<any>({});
   const [savingEdit, setSavingEdit] = useState(false);
 
+  useEffect(() => {
+    apiFetch<any[]>('/subjects')
+      .then(setSubjects)
+      .catch(console.error);
+  }, []);
+
   const loadQuestions = () => {
     setLoading(true);
     const params = new URLSearchParams({
@@ -39,6 +47,7 @@ export const QuestionBank: React.FC = () => {
       page_size: '10'
     });
     if (search) params.append('search', search);
+    if (subjectFilter) params.append('subject_id', subjectFilter);
     if (questionType) params.append('question_type', questionType);
     if (difficulty) params.append('difficulty', difficulty);
     if (status) params.append('status', status);
@@ -51,7 +60,7 @@ export const QuestionBank: React.FC = () => {
 
   useEffect(() => {
     loadQuestions();
-  }, [page, search, questionType, difficulty, status]);
+  }, [page, search, subjectFilter, questionType, difficulty, status]);
 
   const handleOpenEdit = (q: any) => {
     const rev = q.current_revision || {};
@@ -125,10 +134,10 @@ export const QuestionBank: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-[#E2E8F0]">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-2xl font-bold text-[#0F172A]">Central Question Bank</h1>
-            <Badge variant="indigo">Subject: ITS-401</Badge>
+            <h1 className="text-2xl font-bold text-[#0F172A] dark:text-white">Central Question Bank</h1>
+            <Badge variant="indigo">{subjects.length > 0 ? `${subjects.length} Subjects Preloaded` : 'Multi-Subject'}</Badge>
           </div>
-          <p className="text-xs text-[#64748B]">
+          <p className="text-xs text-[#64748B] dark:text-slate-400">
             Repository of immutable, approved examination questions with verified curriculum evidence.
           </p>
         </div>
@@ -148,8 +157,8 @@ export const QuestionBank: React.FC = () => {
       </div>
 
       {/* Filters Toolbar */}
-      <div className="bg-white p-4 rounded-xl border border-[#E2E8F0] shadow-sm space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+      <div className="bg-white dark:bg-[#1E293B] p-4 rounded-xl border border-[#E2E8F0] dark:border-slate-800 shadow-sm space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
           <div className="sm:col-span-1">
             <Input
               placeholder="Search question text..."
@@ -161,6 +170,18 @@ export const QuestionBank: React.FC = () => {
               leftIcon={<Search className="w-4 h-4" />}
             />
           </div>
+
+          <Select
+            value={subjectFilter}
+            onChange={(e) => {
+              setSubjectFilter(e.target.value);
+              setPage(1);
+            }}
+            options={[
+              { value: '', label: 'All Subjects' },
+              ...subjects.map(s => ({ value: s.id, label: `${s.code}: ${s.name.slice(0, 22)}...` }))
+            ]}
+          />
 
           <Select
             value={questionType}
@@ -226,7 +247,8 @@ export const QuestionBank: React.FC = () => {
                     <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
                       <div className="flex items-center gap-2">
                         <span className="font-mono text-[11px] text-slate-400 font-semibold">{q.id}</span>
-                        <Badge variant="indigo" size="sm">Rev {rev.revision_number || 1}</Badge>
+                        <Badge variant="indigo" size="sm">{q.subject_id}</Badge>
+                        <Badge variant="neutral" size="sm">Rev {rev.revision_number || 1}</Badge>
                         <Badge variant="neutral" size="sm" className="uppercase font-semibold">
                           {rev.question_type?.replace('_', ' ')}
                         </Badge>

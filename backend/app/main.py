@@ -10,7 +10,7 @@ from app.services.seed_service import seed_database
 # Import routers
 from app.api.routes import (
     demo, documents, generation, questions,
-    papers, attempts, grading, analytics, notifications
+    papers, attempts, grading, analytics, notifications, subjects
 )
 
 @asynccontextmanager
@@ -89,6 +89,7 @@ app.include_router(attempts.router, prefix=api_v1)
 app.include_router(grading.router, prefix=api_v1)
 app.include_router(analytics.router, prefix=api_v1)
 app.include_router(notifications.router, prefix=api_v1)
+app.include_router(subjects.router, prefix=api_v1)
 
 if __name__ == "__main__":
     import uvicorn

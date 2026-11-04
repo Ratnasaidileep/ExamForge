@@ -233,6 +233,19 @@ export const PaperBuilder: React.FC = () => {
     }
   };
 
+  const handleToggleAcknowledgeWarnings = async () => {
+    if (!paper) return;
+    try {
+      await apiFetch(`/papers/${paper.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ warnings_acknowledged: !paper.warnings_acknowledged })
+      });
+      loadPaper();
+    } catch (e: any) {
+      alert(`Failed to update warnings acknowledgment: ${e.message}`);
+    }
+  };
+
   const handlePublish = async () => {
     if (!paper) return;
     setPublishing(true);
@@ -642,8 +655,20 @@ export const PaperBuilder: React.FC = () => {
                 )}
 
                 {validation.warnings?.length > 0 && (
-                  <div className="space-y-1 text-amber-800">
-                    <span className="font-bold">Blueprint Warnings:</span>
+                  <div className="p-2.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg space-y-2 text-amber-900 dark:text-amber-200">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-[11px]">Blueprint Warnings ({validation.warnings.length}):</span>
+                      <button
+                        onClick={handleToggleAcknowledgeWarnings}
+                        className={`text-[10px] px-2 py-0.5 rounded font-semibold transition-colors ${
+                          paper.warnings_acknowledged
+                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                            : 'bg-amber-200 hover:bg-amber-300 text-amber-900'
+                        }`}
+                      >
+                        {paper.warnings_acknowledged ? '✓ Warnings Acknowledged' : 'Acknowledge Warnings'}
+                      </button>
+                    </div>
                     <ul className="list-disc pl-4 space-y-0.5 text-[11px]">
                       {validation.warnings.map((warn: string, i: number) => (
                         <li key={i}>{warn}</li>

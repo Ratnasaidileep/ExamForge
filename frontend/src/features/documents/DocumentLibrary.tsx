@@ -18,13 +18,16 @@ import { Alert } from '@/components/ui/Alert';
 export const DocumentLibrary: React.FC = () => {
   const navigate = useNavigate();
   const [documents, setDocuments] = useState<any[]>([]);
+  const [subjects, setSubjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [subjectFilter, setSubjectFilter] = useState('');
   
   // Upload modal state
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [docTitle, setDocTitle] = useState('');
+  const [selectedSubjectId, setSelectedSubjectId] = useState('ITS-401');
   const [unitNumber, setUnitNumber] = useState(1);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -40,9 +43,19 @@ export const DocumentLibrary: React.FC = () => {
   const [deleteDoc, setDeleteDoc] = useState<any | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  useEffect(() => {
+    apiFetch<any[]>('/subjects')
+      .then(setSubjects)
+      .catch(console.error);
+  }, []);
+
   const loadDocuments = () => {
     setLoading(true);
-    apiFetch(`/documents?search=${encodeURIComponent(search)}`)
+    const params = new URLSearchParams();
+    if (search) params.append('search', search);
+    if (subjectFilter) params.append('subject_id', subjectFilter);
+
+    apiFetch(`/documents?${params.toString()}`)
       .then(setDocuments)
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -66,7 +79,7 @@ export const DocumentLibrary: React.FC = () => {
 
   useEffect(() => {
     loadDocuments();
-  }, [search]);
+  }, [search, subjectFilter]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -115,7 +128,7 @@ export const DocumentLibrary: React.FC = () => {
     const formData = new FormData();
     formData.append('file', selectedFile);
     formData.append('title', docTitle.trim() || selectedFile.name);
-    formData.append('subject_id', 'ITS-401');
+    formData.append('subject_id', selectedSubjectId);
     formData.append('unit_number', String(unitNumber));
     
     try {
@@ -196,18 +209,38 @@ export const DocumentLibrary: React.FC = () => {
       </div>
 
       {/* Search and Filters Bar */}
-      <div className="flex items-center gap-3 bg-white p-3 rounded-xl border border-[#E2E8F0] shadow-sm">
-        <div className="relative flex-1">
+      <div className="flex flex-col sm:flex-row items-center gap-3 bg-white dark:bg-[#1E293B] p-3 rounded-xl border border-[#E2E8F0] dark:border-slate-800 shadow-sm">
+        <div className="relative flex-1 w-full">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
           <input
             type="text"
             placeholder="Search notes by title or keywords..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-1.5 text-xs rounded-lg border border-[#CBD5E1] focus:outline-none focus:ring-2 focus:ring-indigo-100"
+            className="w-full pl-9 pr-4 py-1.5 text-xs rounded-lg border border-[#CBD5E1] dark:border-slate-700 bg-white dark:bg-slate-900 text-[#0F172A] dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900"
           />
         </div>
-        <Badge variant="neutral">ITS-401 Subject</Badge>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <button
+            onClick={() => setSubjectFilter('')}
+            className={`px-2.5 py-1 rounded text-[11px] font-medium transition-all ${
+              subjectFilter === '' ? 'bg-[#3730A3] text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+            }`}
+          >
+            All Subjects
+          </button>
+          {subjects.map(s => (
+            <button
+              key={s.id}
+              onClick={() => setSubjectFilter(s.id)}
+              className={`px-2.5 py-1 rounded text-[11px] font-medium transition-all ${
+                subjectFilter === s.id ? 'bg-[#3730A3] text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+              }`}
+            >
+              {s.code}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Documents Table */}
@@ -225,6 +258,7 @@ export const DocumentLibrary: React.FC = () => {
                 <thead className="bg-[#F8FAFC] text-[#64748B] font-semibold border-b border-[#E2E8F0]">
                   <tr>
                     <th className="py-3 px-4">Document Title</th>
+                    <th className="py-3 px-4">Subject</th>
                     <th className="py-3 px-4">Unit</th>
                     <th className="py-3 px-4">Format / Size</th>
                     <th className="py-3 px-4">Extraction Status</th>
@@ -243,6 +277,9 @@ export const DocumentLibrary: React.FC = () => {
                             <div className="text-[11px] text-slate-400">{doc.original_filename}</div>
                           </div>
                         </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <Badge variant="indigo" size="sm">{doc.subject_id || 'ITS-401'}</Badge>
                       </td>
                       <td className="py-3 px-4 text-slate-600">Unit {doc.unit_number || 'All'}</td>
                       <td className="py-3 px-4 text-slate-500">
@@ -416,17 +453,27 @@ export const DocumentLibrary: React.FC = () => {
               value={unitNumber}
               onChange={(e) => setUnitNumber(Number(e.target.value))}
               options={[
-                { value: 1, label: 'Unit 1: Introduction to ITS' },
-                { value: 2, label: 'Unit 2: ATMS Systems' },
-                { value: 3, label: 'Unit 3: ATIS Guidance' },
-                { value: 4, label: 'Unit 4: CAV & Platooning' }
+                { value: 1, label: 'Unit 1: Fundamentals' },
+                { value: 2, label: 'Unit 2: Architecture & Protocols' },
+                { value: 3, label: 'Unit 3: Applied Systems & Algorithms' },
+                { value: 4, label: 'Unit 4: Advanced Architectures' }
               ]}
             />
-            <Input
-              label="Subject Code"
-              value="ITS-401"
-              disabled
-              helperText="Intelligent Transport Systems"
+            <Select
+              label="Subject"
+              value={selectedSubjectId}
+              onChange={(e) => setSelectedSubjectId(e.target.value)}
+              options={
+                subjects.length > 0
+                  ? subjects.map(s => ({ value: s.id, label: `${s.code} (${s.name.slice(0, 20)}...)` }))
+                  : [
+                      { value: 'ITS-401', label: 'ITS-401 (Intelligent Transport)' },
+                      { value: 'CS-301', label: 'CS-301 (Distributed Systems)' },
+                      { value: 'AI-402', label: 'AI-402 (NLP & LLMs)' },
+                      { value: 'CY-201', label: 'CY-201 (Cryptography)' },
+                      { value: 'DS-202', label: 'DS-202 (Advanced DSA)' }
+                    ]
+              }
             />
           </div>
         </form>

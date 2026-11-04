@@ -191,21 +191,41 @@ export const WelcomePage: React.FC = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-teal-400 text-xs font-semibold uppercase tracking-wider">
               <BookOpen className="w-4 h-4" />
-              <span>Seeded College Subject</span>
+              <span>Preloaded STEM Curriculums</span>
             </div>
-            <Badge variant="indigo">SQLite Database Grounded</Badge>
+            <Badge variant="indigo">5 Subjects • 40 Approved Questions</Badge>
           </div>
           <h3 className="text-lg font-bold text-white">
-            ITS-401: Intelligent Transport Systems
+            Pre-loaded Academic Engineering Courses
           </h3>
           <p className="text-xs text-slate-300 leading-relaxed max-w-3xl">
-            Pre-loaded with 4 academic units covering ITS Architecture, Inductive Loops and Radar Surveillance, SCATS/SCOOT Adaptive Traffic Optimization, FASTag RFID Toll Collection, DSRC vs Cellular-V2X (C-V2X), and Cooperative Adaptive Cruise Control (CACC) Platooning.
+            ExamForge includes 5 rich STEM college curriculums complete with lecture notes, unit topics, and approved examination questions featuring KaTeX mathematical equations, rigorous rubrics, and 5 ready-to-publish draft papers:
           </p>
-          <div className="pt-2 flex flex-wrap gap-2 text-[11px] text-slate-400">
-            <span className="px-2.5 py-1 rounded bg-slate-800 border border-slate-700">Unit 1: Fundamentals & Sensors</span>
-            <span className="px-2.5 py-1 rounded bg-slate-800 border border-slate-700">Unit 2: ATMS & Ramp Metering</span>
-            <span className="px-2.5 py-1 rounded bg-slate-800 border border-slate-700">Unit 3: ATIS & RFID Toll Collection</span>
-            <span className="px-2.5 py-1 rounded bg-slate-800 border border-slate-700">Unit 4: V2X & Autonomous Platooning</span>
+          <div className="pt-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
+            <div className="p-3 bg-slate-800/90 rounded-lg border border-slate-700">
+              <span className="font-bold text-teal-300 block">ITS-401</span>
+              <span className="text-[11px] text-slate-300">Intelligent Transport Systems (Sensors, ATMS, RFID, V2X, Platooning)</span>
+            </div>
+            <div className="p-3 bg-slate-800/90 rounded-lg border border-slate-700">
+              <span className="font-bold text-indigo-300 block">CS-301</span>
+              <span className="text-[11px] text-slate-300">Distributed Systems & Cloud Computing (CAP, Raft Consensus, LSM, Spanner)</span>
+            </div>
+            <div className="p-3 bg-slate-800/90 rounded-lg border border-slate-700">
+              <span className="font-bold text-purple-300 block">AI-402</span>
+              <span className="text-[11px] text-slate-300">NLP & Large Language Models (BPE, Transformers, LoRA PEFT, DPO, RAG)</span>
+            </div>
+            <div className="p-3 bg-slate-800/90 rounded-lg border border-slate-700">
+              <span className="font-bold text-emerald-300 block">CY-201</span>
+              <span className="text-[11px] text-slate-300">Cryptography & Network Security (AES-GCM, Diffie-Hellman, SHA-256, TLS 1.3)</span>
+            </div>
+            <div className="p-3 bg-slate-800/90 rounded-lg border border-slate-700">
+              <span className="font-bold text-amber-300 block">DS-202</span>
+              <span className="text-[11px] text-slate-300">Advanced Data Structures & Algorithms (AVL, Red-Black, Fibonacci Heaps, Flow)</span>
+            </div>
+            <div className="p-3 bg-slate-800/90 rounded-lg border border-slate-700 flex flex-col justify-center text-center">
+              <span className="font-bold text-white block">Ready to Publish Papers</span>
+              <span className="text-[11px] text-teal-400">5 fully-assembled draft exams ready for 1-click publishing</span>
+            </div>
           </div>
         </CardContent>
       </Card>

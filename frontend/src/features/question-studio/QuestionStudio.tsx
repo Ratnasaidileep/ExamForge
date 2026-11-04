@@ -66,9 +66,10 @@ export const QuestionStudio: React.FC = () => {
     setIsGenerating(true);
     setGenerationError(null);
 
+    const selectedDoc = documents.find(d => d.id === selectedDocId);
     const payload = {
       document_id: selectedDocId,
-      subject_id: 'ITS-401',
+      subject_id: selectedDoc?.subject_id || 'ITS-401',
       unit_number: unitNumber,
       question_types: questionTypes,
       difficulty,
@@ -166,9 +167,10 @@ export const QuestionStudio: React.FC = () => {
               />
 
               {selectedDoc && (
-                <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-1.5 text-xs">
+                <div className="p-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-lg space-y-1.5 text-xs">
                   <div className="text-slate-500 font-medium">Document Details:</div>
-                  <div className="text-[#0F172A] font-semibold">{selectedDoc.title}</div>
+                  <div className="text-[#0F172A] dark:text-white font-semibold">{selectedDoc.title}</div>
+                  <div className="text-slate-500">Subject: <span className="font-semibold text-indigo-700 dark:text-indigo-400">{selectedDoc.subject_id}</span></div>
                   <div className="text-slate-500">Unit: {selectedDoc.unit_number || 'All'}</div>
                   <div className="text-slate-500">Format: {selectedDoc.file_type.toUpperCase()}</div>
                   <div className="flex items-center gap-1.5 text-emerald-700 font-medium pt-1">

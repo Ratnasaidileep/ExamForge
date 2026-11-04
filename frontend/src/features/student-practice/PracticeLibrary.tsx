@@ -15,6 +15,7 @@ export const PracticeLibrary: React.FC = () => {
   const navigate = useNavigate();
   const [papers, setPapers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedSubject, setSelectedSubject] = useState('');
   const [selectedPaper, setSelectedPaper] = useState<any | null>(null);
   const [starting, setStarting] = useState(false);
 
@@ -27,6 +28,10 @@ export const PracticeLibrary: React.FC = () => {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
+
+  const availableSubjects = Array.from(new Set(papers.map(p => p.subject_id).filter(Boolean)));
+
+  const filteredPapers = papers.filter(p => !selectedSubject || p.subject_id === selectedSubject);
 
   const handleStartAttempt = async () => {
     if (!selectedPaper) return;
@@ -60,16 +65,42 @@ export const PracticeLibrary: React.FC = () => {
         </p>
       </div>
 
+      {/* Subject Filter Pills */}
+      {availableSubjects.length > 1 && (
+        <div className="flex items-center gap-2 flex-wrap bg-white dark:bg-[#1E293B] p-2.5 rounded-xl border border-slate-200 dark:border-slate-800">
+          <span className="text-[11px] font-semibold text-slate-500">Filter by Subject:</span>
+          <button
+            onClick={() => setSelectedSubject('')}
+            className={`px-2.5 py-1 rounded text-[11px] font-medium transition-all ${
+              selectedSubject === '' ? 'bg-teal-700 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+            }`}
+          >
+            All Subjects
+          </button>
+          {availableSubjects.map(sub => (
+            <button
+              key={sub}
+              onClick={() => setSelectedSubject(sub)}
+              className={`px-2.5 py-1 rounded text-[11px] font-medium transition-all ${
+                selectedSubject === sub ? 'bg-teal-700 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+              }`}
+            >
+              {sub}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Papers Grid */}
       {loading ? (
         <Spinner size="lg" className="h-64" />
-      ) : papers.length === 0 ? (
+      ) : filteredPapers.length === 0 ? (
         <div className="p-12 text-center text-slate-400 text-xs bg-white rounded-xl border border-dashed border-slate-300">
           No published examinations or practice sets available currently.
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {papers.map((paper) => {
+          {filteredPapers.map((paper) => {
             const now = new Date();
             const startDate = paper.window_start ? new Date(paper.window_start) : null;
             const endDate = paper.window_end ? new Date(paper.window_end) : null;
